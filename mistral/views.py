@@ -19,7 +19,29 @@ from rest_framework.response import Response
 from rest_framework.exceptions import AuthenticationFailed
 from .models import User
 import jwt,datetime
+from functools import wraps
+from django.utils.decorators import method_decorator
 
+
+def token_required(f):
+    @wraps(f)
+    def decorated_function(request, *args, **kwargs):
+        token = request.headers.get('Authorization')
+        if not token:
+            return JsonResponse({'error': 'Token is missing!'}, status=403)
+
+        try:
+            if token.startswith('Bearer '):
+                token = token.split(' ')[1]
+            payload = jwt.decode(token, 'secret', algorithms=['HS256'])
+            request.user_id = payload['id']
+        except jwt.ExpiredSignatureError:
+            return JsonResponse({'error': 'Token has expired!'}, status=403)
+        except jwt.InvalidTokenError:
+            return JsonResponse({'error': 'Invalid token!'}, status=403)
+
+        return f(request, *args, **kwargs)
+    return decorated_function
 
 # User Register
 class Register(APIView):
@@ -58,7 +80,14 @@ class Login(APIView):
         # decode : used to convert token to a string
         token = jwt.encode(payload, 'secret', algorithm='HS256')
         
-        return Response({'token' : token})
+        # create a response object
+        response = Response()
+        # set the token in cookies
+        response.set_cookie(key='token', value=token, httponly=True)
+        # return the token in the response body as well
+        response.data = {'token': token}
+        
+        return response
 
 
 
@@ -82,6 +111,7 @@ def transform_text(input_text):
 
 # View to generate text using Mistral API
 @csrf_exempt
+@token_required
 def generate_text(request):
     if request.method == 'POST':
         try:
@@ -129,6 +159,7 @@ def generate_text(request):
 model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
 
 @csrf_exempt
+@token_required
 def analyze_context(request):
     try:
         # Parse the JSON data from the request body

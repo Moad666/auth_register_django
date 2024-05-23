@@ -1,0 +1,7 @@
+organization=mistral
+projectKey=mistral_api
+serverUrl=https://sonarcloud.io
+serverVersion=8.0.0.54437
+dashboardUrl=https://sonarcloud.io/dashboard?id=mistral_api
+ceTaskId=AY-Hdti-Ot0nKqdh43qU
+ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AY-Hdti-Ot0nKqdh43qU

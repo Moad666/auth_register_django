@@ -1,0 +1,1 @@
+ 2pyXwhrmistral/views.py
